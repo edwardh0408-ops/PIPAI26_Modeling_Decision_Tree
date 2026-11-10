@@ -7,13 +7,19 @@ on the held-out appointments, and turn those scores into slot value.
 
 from pathlib import Path
 
+import matplotlib
+
+matplotlib.use("Agg")
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score
 from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeClassifier, export_text
+from sklearn.tree import DecisionTreeClassifier, export_text, plot_tree
 
 DATA_PATH = Path(__file__).with_name("clinic_appointments.csv")
+TREE_GRAPH_PATH = Path(__file__).with_name("tree_v1.png")
 RANDOM_STATE = 42
 TEST_SIZE = 0.30
 
@@ -121,6 +127,25 @@ def leaf_for(appointment):
     return {"node": node_id, "path": path, "training_counts": counts}
 
 
+def save_tree_graph(tree):
+    """Draw v1 and save it next to this script."""
+    fig, ax = plt.subplots(figsize=(16, 8))
+    plot_tree(
+        tree,
+        feature_names=FEATURES,
+        class_names=["show", "no-show"],
+        filled=True,
+        rounded=True,
+        impurity=False,
+        fontsize=11,
+        ax=ax,
+    )
+    fig.tight_layout()
+    fig.savefig(TREE_GRAPH_PATH, dpi=150)
+    plt.close(fig)
+    print(f"Saved {TREE_GRAPH_PATH.name}")
+
+
 def slot_value(result):
     """Total and per-appointment value from a confusion matrix."""
     total = sum(result[cell] * VALUE[cell] for cell in VALUE)
@@ -151,6 +176,7 @@ def main():
     )
     tree.fit(x_train, y_train)
     TREE = tree
+    save_tree_graph(tree)
 
     print("SPLIT")
     print(f"rows {len(appointments)}  train {len(y_train)}  test {len(y_test)}")
